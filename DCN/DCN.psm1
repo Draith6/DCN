@@ -1,16 +1,4 @@
-﻿<#	
-	===========================================================================
-	 Created with: 	SAPIEN Technologies, Inc., PowerShell Studio 2016 v5.2.128
-	 Created on:   	9/12/2016 9:31 PM
-	 Created by:   	Draith
-	 Organization: 	
-	 Filename:     	DCN.psm1
-	-------------------------------------------------------------------------
-	 Module Name: DCN
-	===========================================================================
-#>
-
-<#
+﻿<#
    .SYNOPSIS
         Finds Current DCN Controller
    .DESCRIPTION
@@ -112,7 +100,8 @@ function New-DCNMember
 	[CmdletBinding()]
 	param ()
 	
-	#TODO: Place script here
+	#Install Service
+	#Install Cache from Controller
 }
 
 function Get-DCNMember
@@ -136,7 +125,8 @@ function Add-DCNTask
 	[CmdletBinding()]
 	param ()
 	
-	#TODO: Place script here
+	#Add to SQL Table
+	#Add files to cache, if appropriate
 }
 
 function Get-DCNTask
@@ -192,7 +182,8 @@ function Compare-DCNCache
 	[CmdletBinding()]
 	param ()
 	
-	#TODO: Place script here
+	#Get-DNCController
+	#Compare Cache to Controller
 }
 
 function Update-DCNCache
@@ -216,7 +207,9 @@ function Install-DCN
 	[CmdletBinding()]
 	param ()
 	
-	#TODO: Place script here
+	#New-DCNDatabase
+	#Install Service
+	#New-DCNController
 }
 
 function Uninstall-DCN
