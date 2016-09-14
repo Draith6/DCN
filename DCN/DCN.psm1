@@ -12,14 +12,7 @@
 #>
 function Get-DCNController
 {
-	[CmdletBinding()]
-	param
-	(
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[array]$DatabaseParameters
-	)
-	
+	Write-Output 'localhost'
 }
 
 <#
@@ -206,9 +199,33 @@ function Install-DCN
 {
 	[CmdletBinding()]
 	param ()
+	try
+	{
+		New-Item -ItemType dir -Path "$env:SystemDrive\program files\PowerShellDCN"  -ErrorAction SilentlyContinue| Out-Null
+	}
+	catch
+	{
+		Write-Verbose "Unable to create PowerShellDCN directory."
+	}
 	
+	Copy-Item -Path c:\Users\Draith\Documents\GitHub\DCN\service.ps1 -Destination "$env:SystemDrive\program files\PowerShellDCN\service.ps1" -force
+	try
+	{
+		$jobname = "PowerShellDCN"
+		$script = "$env:SystemDrive\program files\PowerShellDCN\service.ps1"
+		$repeat = (New-TimeSpan -Minutes 1)
+		$scriptblock = [scriptblock]::Create($script)
+		$trigger = New-JobTrigger -Once -At (Get-Date).Date -RepeatIndefinitely -RepetitionInterval $repeat
+		$options = New-ScheduledJobOption -RunElevated -ContinueIfGoingOnBattery -StartIfOnBattery
+		Register-ScheduledJob -Name $jobname -ScriptBlock $scriptblock -Trigger $trigger -ScheduledJobOption $options 
+	}
+	catch
+	{
+		
+	}
 	#New-DCNDatabase
 	#Install Service
+	#Setup Reg Keys/file config?
 	#New-DCNController
 }
 
