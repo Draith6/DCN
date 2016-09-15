@@ -9,8 +9,6 @@
 	}
 	#>
 	#If current controller, delegate tasks after checking connection to each member
-	
-	Import-Module c:\Users\Draith\Documents\GitHub\DCN\DCN\DCN.psm1 -Force
-	$output = Test-Connection (Get-DCNController) -Quiet -count 1
-	Write-Output $output | Out-File c:\Temp\output.txt -Append
-	Write-Output $true
+$output = "Test123"
+$output | Out-File c:\Temp\output.txt -Append
+Write-Output $true

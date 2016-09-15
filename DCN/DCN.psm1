@@ -199,25 +199,29 @@ function Install-DCN
 {
 	[CmdletBinding()]
 	param ()
+	
+	$msg = "Enter the username and password that will run the PowerShell Distributed Computing Network (DCN)";
+	$credential = $Host.UI.PromptForCredential("Task username and password", $msg, "$env:userdomain\$env:username", $env:userdomain)
+	$timer = Read-Host -Prompt "Enter the interval (in minutes) DCN will check for tasks to run"
+	$log = "$env:SystemDrive\PowerShellDCN\Service.log"
 	try
 	{
-		New-Item -ItemType dir -Path "$env:SystemDrive\program files\PowerShellDCN"  -ErrorAction SilentlyContinue| Out-Null
+		New-Item -ItemType dir -Path "$env:SystemDrive\PowerShellDCN"  -ErrorAction SilentlyContinue | Out-Null
 	}
 	catch
 	{
 		Write-Verbose "Unable to create PowerShellDCN directory."
 	}
 	
-	Copy-Item -Path c:\Users\Draith\Documents\GitHub\DCN\service.ps1 -Destination "$env:SystemDrive\program files\PowerShellDCN\service.ps1" -force
+	Copy-Item -Path c:\Users\Draith\Documents\GitHub\DCN\service.ps1 -Destination "$env:SystemDrive\PowerShellDCN\service.ps1" -force
 	try
 	{
 		$jobname = "PowerShellDCN"
-		$script = "$env:SystemDrive\program files\PowerShellDCN\service.ps1"
-		$repeat = (New-TimeSpan -Minutes 1)
-		$scriptblock = [scriptblock]::Create($script)
-		$trigger = New-JobTrigger -Once -At (Get-Date).Date -RepeatIndefinitely -RepetitionInterval $repeat
+		$script = "$env:SystemDrive\PowerShellDCN\service.ps1"
+		$repeat = (New-TimeSpan -Minutes $timer)
+		$trigger = New-JobTrigger -Once -At (Get-Date).Date -RepeatIndefinitely -RepetitionInterval $repeat 
 		$options = New-ScheduledJobOption -RunElevated -ContinueIfGoingOnBattery -StartIfOnBattery
-		Register-ScheduledJob -Name $jobname -ScriptBlock $scriptblock -Trigger $trigger -ScheduledJobOption $options 
+		Register-ScheduledJob -Name $jobname -FilePath $script -Trigger $trigger -ScheduledJobOption $options -Credential $credential|out-null
 	}
 	catch
 	{
@@ -252,6 +256,88 @@ function Get-DCNTasksToRun
 	
 	#TODO: Place script here
 }
+<#
+	.SYNOPSIS
+		Simple log writing function.
+	
+	.DESCRIPTION
+		This function will write to log file, recording the date/time, log level (INFO, ERROR, WARN) and message supplied.  It will also roll the logs at a set size, renaming the exist log to an archive name and starting anew.
+	
+	.PARAMETER logpath
+		Path of the log to write to.  Full path is expected i.e. c:\logs\error.log
+	
+	.PARAMETER level
+		The 2nd part of the message, this should be one of the following values - INFO, WARN, ERROR, NORMAL.  
+	
+	.PARAMETER message
+		The actual message that makes up the bulk of the log.  This is what you want recorded to the log file.
+	
+	.EXAMPLE
+				PS C:\> Write-Log -logpath 'Value1' -level 'Value2'
+	
+	.NOTES
+		Additional information about the function.
+#>
+function Write-Log
+{
+	[CmdletBinding(PositionalBinding = $true)]
+	param
+	(
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $true,
+				   Position = 0)]
+		[ValidateNotNullOrEmpty()]
+		[Alias('path', 'filepath', 'file')]
+		[string]$logpath,
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $true,
+				   Position = 1)]
+		[ValidateSet('INFO', 'WARN', 'ERROR', 'NORMAL')]
+		[string]$level,
+		[Parameter(Mandatory = $true,
+				   ValueFromPipeline = $true,
+				   ValueFromPipelineByPropertyName = $true,
+				   ValueFromRemainingArguments = $true,
+				   Position = 2)]
+		[ValidateNotNullOrEmpty()]
+		[Alias('text')]
+		[string]$message
+	)
+	
+	Begin
+	{
+		$date = Get-Date
+	}
+	Process
+	{
+		if (Test-Path $logpath)
+		{
+			if ((Get-Item $logpath).length -gt 5mb)
+			{
+				Copy-Item -Path $logpath -Destination $logpath + '.' + $date
+			}
+		}
+		$lineoutput = $date.ToString() + '---' + $level + '---' + $message
+		try
+		{
+			$lineoutput | Out-File -FilePath $logpath -Append -Force
+		}
+		catch
+		{
+			Write-Verbose "Unable to log to $logpath"
+			
+		}
+		
+	}
+	End
+	{
+		
+	}
+}
 
 
 Export-ModuleMember -Function Get-DCNController,
@@ -274,4 +360,5 @@ Export-ModuleMember -Function Get-DCNController,
 					Install-DCN,
 					Uninstall-DCN,
 					Repair-DCNMember,
+					write-log,
 					Get-DCNTasksToRun
